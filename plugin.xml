@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.4"?>
+<plugin>
+   <extension
+         point="org.eclipse.ui.commands">
+      <category
+            name="Test Smell Detector Category"
+            id="TestSmell.commands.category">
+      </category>
+      <command
+            name="Test Smell Detector Command"
+            categoryId="TestSmell.commands.category"
+            id="TestSmell.commands.tSmellCommand">
+      </command>
+   </extension>
+   <extension
+         point="org.eclipse.ui.handlers">
+      <handler
+            commandId="TestSmell.commands.tSmellCommand"
+            class="main.java.testsmell.plugin.handlers.TSmellsHandler">
+      </handler>
+   </extension>
+   <extension
+         point="org.eclipse.ui.bindings">
+      <key
+            commandId="TestSmell.commands.tSmellCommand"
+            contextId="org.eclipse.ui.contexts.window"
+            sequence="M1+6"
+            schemeId="org.eclipse.ui.defaultAcceleratorConfiguration">
+      </key>
+   </extension>
+   <extension
+         point="org.eclipse.ui.menus">
+      <menuContribution
+            locationURI="toolbar:org.eclipse.ui.main.toolbar?after=additions">
+         <toolbar
+               id="TestSmell.toolbars.tSmellToolbar">
+            <command
+                  commandId="TestSmell.commands.tSmellCommand"
+                  icon="icons/nose.png"
+                  tooltip="Run test smell detector"
+                  id="TestSmell.toolbars.tSmellCommand">
+            </command>
+         </toolbar>
+      </menuContribution>
+   </extension>
+   <extension
+         point="org.eclipse.ui.views">
+      <view
+            class="main.java.testsmell.plugin.views.TSmellsView"
+            icon="icons/nose.png"
+            id="TestSmellsDetector.view"
+            inject="false"
+            name="Test Smells Detector"
+            restorable="true">
+      </view>
+   </extension>
+   <extension
+         point="org.eclipse.ui.perspectiveExtensions">
+      <perspectiveExtension
+            targetID="org.eclipse.jdt.ui.JavaPerspective">
+         <view
+               closeable="true"
+               id="TestSmellsDetector.view"
+               relationship="stack"
+               relative="TestSmellsDetector.view"
+               showTitle="true"
+               visible="true">
+         </view>
+      </perspectiveExtension>
+   </extension>
+</plugin>
