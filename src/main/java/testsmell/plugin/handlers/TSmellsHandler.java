@@ -1,6 +1,5 @@
 package main.java.testsmell.plugin.handlers;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -36,9 +35,7 @@ import org.eclipse.ui.PartInitException;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.handlers.HandlerUtil;
 
-import main.java.testsmell.AbstractSmell;
 import main.java.testsmell.TestFile;
-import main.java.testsmell.TestSmellDetector;
 
 /**
  * A handler class for the the test smells plugin.
@@ -49,20 +46,14 @@ public class TSmellsHandler extends AbstractHandler {
 	private ArrayList<IResource> testPaths = new ArrayList<IResource>();
 	private HashMap<IResource, IResource> paths = new HashMap<>();
 	private IProject project;
-
+	private List<TestFile> testFiles = new ArrayList<TestFile>();
+	
 	@Override
 	/**
 	 * Launches the Test Smells Detector view when a project is selected and the
 	 * plugin icon is activated.
 	 */
 	public Object execute(ExecutionEvent event) throws ExecutionException {
-		IWorkbenchPage page = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage();
-		try {
-			page.showView("TestSmellsDetector.view");
-		} catch (PartInitException e) {
-			e.printStackTrace();
-		}
-
 		Shell activeShell = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getShell();
 		try {
 			project = getCurrentProject(event);
@@ -70,6 +61,17 @@ public class TSmellsHandler extends AbstractHandler {
 		} catch (CoreException | NullPointerException ex) {
 			MessageDialog.openWarning(activeShell, "TestSmellDetector", "Please select a project");
 			return null;
+		}
+		
+		IWorkbenchPage page = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage();
+		try {
+			
+			TSmellsDetection detect = TSmellsDetection.getInstance(testFiles);
+			detect.detectSmells();
+			page.showView("TestSmellsDetector.view");
+
+		} catch (PartInitException e) {
+			e.printStackTrace();
 		}
 		return null;
 	}
@@ -80,7 +82,7 @@ public class TSmellsHandler extends AbstractHandler {
 	 * @param e
 	 * @return
 	 */
-	public static IProject getCurrentProject(ExecutionEvent e) {
+	private IProject getCurrentProject(ExecutionEvent e) {
 		ISelection sel = HandlerUtil.getCurrentSelection(e);
 
 		if (sel instanceof IStructuredSelection) {
@@ -115,10 +117,8 @@ public class TSmellsHandler extends AbstractHandler {
 			}
 			if (testPaths.size() > 0) {
 				getProdFiles();
-				TestSmellDetector testSmellDetector = TestSmellDetector.createTestSmellDetector();
 
 				TestFile testFile;
-				List<TestFile> testFiles = new ArrayList<>();
 
 				for (Entry<IResource, IResource> fullPaths : paths.entrySet()) {
 					String prodFilePath = fullPaths.getKey().getRawLocation().toString();
@@ -126,25 +126,6 @@ public class TSmellsHandler extends AbstractHandler {
 
 					testFile = new TestFile(project.getName(), testFilePath, prodFilePath);
 					testFiles.add(testFile);
-				}
-
-				TestFile tempFile;
-				for (TestFile file : testFiles) {
-					
-					try {
-						tempFile = testSmellDetector.detectSmells(file);
-						System.out.println(file.getProductionFilePath() + "\t" + file.getTestFilePath());
-						for (AbstractSmell smell : tempFile.getTestSmells()) {
-							try {
-								System.out.println(smell.getSmellName() + "\t" + smell.getHasSmell());
-							} catch (NullPointerException e) {
-
-							}
-						}
-					} catch (IOException e) {
-						e.printStackTrace();
-					}
-
 				}
 			}
 		}

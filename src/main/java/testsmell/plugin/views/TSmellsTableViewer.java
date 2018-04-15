@@ -1,13 +1,13 @@
 package main.java.testsmell.plugin.views;
 import java.util.Arrays;
-
-
 import org.eclipse.jface.viewers.*;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.*;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.*;
+
+import main.java.testsmell.plugin.handlers.TSmellsDetection;
 
 /**
  * Launches a table viewer with a grid that displays the results for the test smells.
@@ -110,11 +110,6 @@ public class TSmellsTableViewer {
 		GridData gridData = new GridData (GridData.HORIZONTAL_ALIGN_FILL | GridData.FILL_BOTH);
 		composite.setLayoutData (gridData);
 
-		// Set numColumns to 3 for the buttons 
-		GridLayout layout = new GridLayout(3, false);
-		layout.marginWidth = 4;
-		composite.setLayout (layout);
-
 		// Create the table 
 		createTable(composite);
 		
@@ -127,6 +122,9 @@ public class TSmellsTableViewer {
 	 * @param parent
 	 */
 	private void createTable(Composite parent) {
+		TSmellsDetection detection = TSmellsDetection.getInstance();
+		
+
 		int style = SWT.SINGLE | SWT.BORDER | SWT.H_SCROLL | SWT.V_SCROLL | 
 					SWT.FULL_SELECTION | SWT.HIDE_SELECTION;
 
@@ -139,23 +137,42 @@ public class TSmellsTableViewer {
 					
 		table.setLinesVisible(true);
 		table.setHeaderVisible(true);
-
-		TableColumn column = new TableColumn(table, SWT.CENTER, 0);		
-		column.setText("File");
-		column.setWidth(100);
 		
-		column = new TableColumn(table, SWT.LEFT, 1);
+		TableColumn column = new TableColumn(table, SWT.CENTER, 0);
 		column.setText("Test Smell");
-		column.setWidth(100);
+		column.setWidth(300);
+		
+		column = new TableColumn(table, SWT.CENTER, 1);		
+		column.setText("Production File Path");
+		column.setWidth(300);
+		
+		column = new TableColumn(table, SWT.CENTER, 2);		
+		column.setText("Test File Path");
+		column.setWidth(300);
 
-		column = new TableColumn(table, SWT.LEFT, 2);
+		column = new TableColumn(table, SWT.CENTER, 3);
 		column.setText("Detected?");
 		column.setWidth(100);
 		
-
-		column = new TableColumn(table, SWT.CENTER, 3);
+		column = new TableColumn(table, SWT.CENTER, 4);
 		column.setText("Description");
 		column.setWidth(300);
+		
+		if(detection != null) {	
+	        TableItem item = new TableItem(table, SWT.NONE);
+	        String[] tempSmellNames = detection.getSmellNames();
+	        String[] tempProdFilePaths = detection.getProdFilePath();
+	        String[] tempTestFilePaths = detection.getTestFilePath();
+	        String[] tempHasSmells = detection.hasSmells();
+	        for (int i = 0; i < tempSmellNames.length; i++) {
+		        item.setText(0, tempSmellNames[i]);	
+			    item.setText(1, tempProdFilePaths[0]);
+				item.setText(2, tempTestFilePaths[0]);
+				item.setText(3, tempHasSmells[i]);
+				System.out.println(tempSmellNames[i] + ", " + tempProdFilePaths[0] + ", " + tempTestFilePaths[0] + ", " + tempHasSmells[i]  + "\n");
+		    }     
+	        //TODO: Populate the table correctly.
+		}
 	}
 
 	/**
@@ -165,7 +182,6 @@ public class TSmellsTableViewer {
 
 		tableViewer = new TableViewer(table);
 		tableViewer.setUseHashlookup(true);
-		
 		tableViewer.setColumnProperties(columnNames);
 	}
 
