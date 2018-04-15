@@ -8,6 +8,7 @@ import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.*;
 
 import main.java.testsmell.plugin.handlers.TSmellsDetection;
+import main.java.testsmell.plugin.handlers.TSmellsDetectionCollection;
 
 /**
  * Launches a table viewer with a grid that displays the results for the test smells.
@@ -122,14 +123,14 @@ public class TSmellsTableViewer {
 	 * @param parent
 	 */
 	private void createTable(Composite parent) {
-		TSmellsDetection detection = TSmellsDetection.getInstance();
+		TSmellsDetectionCollection collectionObj = TSmellsDetectionCollection.getInstanceExisting();
 		
 
 		int style = SWT.SINGLE | SWT.BORDER | SWT.H_SCROLL | SWT.V_SCROLL | 
 					SWT.FULL_SELECTION | SWT.HIDE_SELECTION;
 
 		table = new Table(parent, style);
-		
+		table.removeAll();
 		GridData gridData = new GridData(GridData.FILL_BOTH);
 		gridData.grabExcessVerticalSpace = true;
 		gridData.horizontalSpan = 3;
@@ -149,29 +150,25 @@ public class TSmellsTableViewer {
 		column = new TableColumn(table, SWT.CENTER, 2);		
 		column.setText("Test File Path");
 		column.setWidth(300);
-
-		column = new TableColumn(table, SWT.CENTER, 3);
-		column.setText("Detected?");
-		column.setWidth(100);
 		
-		column = new TableColumn(table, SWT.CENTER, 4);
+		column = new TableColumn(table, SWT.CENTER, 3);
 		column.setText("Description");
 		column.setWidth(300);
 		
-		if(detection != null) {	
-	        TableItem item = new TableItem(table, SWT.NONE);
-	        String[] tempSmellNames = detection.getSmellNames();
-	        String[] tempProdFilePaths = detection.getProdFilePath();
-	        String[] tempTestFilePaths = detection.getTestFilePath();
-	        String[] tempHasSmells = detection.hasSmells();
-	        for (int i = 0; i < tempSmellNames.length; i++) {
-		        item.setText(0, tempSmellNames[i]);	
-			    item.setText(1, tempProdFilePaths[0]);
-				item.setText(2, tempTestFilePaths[0]);
-				item.setText(3, tempHasSmells[i]);
-				System.out.println(tempSmellNames[i] + ", " + tempProdFilePaths[0] + ", " + tempTestFilePaths[0] + ", " + tempHasSmells[i]  + "\n");
-		    }     
-	        //TODO: Populate the table correctly.
+		if(collectionObj != null) {	
+			TSmellsDetection detection =  collectionObj.getNextDetection();
+			while (detection != null)
+			{
+		        String[] tempSmellNames = detection.getSmellNames();
+		        String[] tempProdFilePaths = detection.getProdFilePath();
+		        String[] tempTestFilePaths = detection.getTestFilePath();
+		        for (int i = 0; i < tempSmellNames.length; i++) {
+	        		TableItem item = new TableItem(table, SWT.NONE);
+	        		item.setText(new String[] {tempSmellNames[i],tempProdFilePaths[i], tempTestFilePaths[i]});
+		        	System.out.println(tempSmellNames[i] + ", " + tempProdFilePaths[i] + ", " + tempTestFilePaths[i] + "\n");
+		        } 
+		        detection =  collectionObj.getNextDetection();
+			}
 		}
 	}
 

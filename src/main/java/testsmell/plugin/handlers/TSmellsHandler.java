@@ -59,15 +59,22 @@ public class TSmellsHandler extends AbstractHandler {
 			project = getCurrentProject(event);
 			getProjectInfo(project);
 		} catch (CoreException | NullPointerException ex) {
-			MessageDialog.openWarning(activeShell, "TestSmellDetector", "Please select a project");
+			ex.printStackTrace();
+			MessageDialog.openError(activeShell, "TestSmellDetector", "Please select a project");
 			return null;
 		}
 		
 		IWorkbenchPage page = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage();
 		try {
-			
-			TSmellsDetection detect = TSmellsDetection.getInstance(testFiles);
-			detect.detectSmells();
+			TSmellsDetectionCollection colllectionObj = TSmellsDetectionCollection.getInstance();
+			colllectionObj.addNewDetections(testFiles);
+			TSmellsDetection detect = colllectionObj.getNextDetection();
+			while (detect != null)
+			{
+				detect.detectSmells();
+				detect = colllectionObj.getNextDetection();
+			}
+			colllectionObj.resetNextIndexVal();
 			page.showView("TestSmellsDetector.view");
 
 		} catch (PartInitException e) {
@@ -116,16 +123,42 @@ public class TSmellsHandler extends AbstractHandler {
 				}
 			}
 			if (testPaths.size() > 0) {
-				getProdFiles();
+				try {
+					getProdFiles();
 
-				TestFile testFile;
-
-				for (Entry<IResource, IResource> fullPaths : paths.entrySet()) {
-					String prodFilePath = fullPaths.getKey().getRawLocation().toString();
-					String testFilePath = fullPaths.getValue().getRawLocation().toString();
-
-					testFile = new TestFile(project.getName(), testFilePath, prodFilePath);
-					testFiles.add(testFile);
+					TestFile testFile;
+					
+					for (Entry<IResource, IResource> fullPaths : paths.entrySet()) {
+						String prodFilePath = fullPaths.getKey().getRawLocation().toString();
+						String testFilePath = fullPaths.getValue().getRawLocation().toString();
+						testFile = new TestFile(project.getName(), testFilePath, prodFilePath);
+						testFiles.add(testFile);
+				}
+				} catch (NullPointerException e) {
+					Shell activeShell = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getShell();
+					String errorStr = "Recheck production and test file names. Below are the test file/production file mappings that triggered the exception: \n\n";
+					for (Entry<IResource, IResource> fullPaths : paths.entrySet())
+					{
+						if (fullPaths.getKey() == null)
+						{
+							errorStr += "Production File: null ,";
+						}
+						else 
+						{
+							errorStr += "Production File: " + fullPaths.getKey().getRawLocation().toString() + " ,";
+						}
+						
+						if (fullPaths.getValue() == null)
+						{
+							errorStr += "Test File: null ,";
+						}
+						else 
+						{
+							errorStr += "Test File: " + fullPaths.getValue().getRawLocation().toString() + " \n\n"; 
+						}
+							
+					}
+					MessageDialog.openError(activeShell, "Failed to load files" , errorStr );
 				}
 			}
 		}

@@ -1,94 +1,90 @@
 package main.java.testsmell.plugin.handlers;
 
 import java.io.IOException;
-import java.util.Collection;
-import java.util.HashMap;
+import java.util.AbstractMap.SimpleEntry;
+import java.util.ArrayList;
 import main.java.testsmell.AbstractSmell;
 import main.java.testsmell.TestFile;
 import main.java.testsmell.TestSmellDetector;
 
 public class TSmellsDetection {
 	
-	private HashMap<String, String> paths = new HashMap<>();
-	private HashMap<String, Boolean> smells = new HashMap<String, Boolean>();
-	private static TSmellsDetection detectionObj;
-	private static Collection<TestFile> testFiles;
+	private SimpleEntry<String, String> paths;
+	private ArrayList<String> smells = new ArrayList<String>();
+	private TestFile testFile;
 
-	private TSmellsDetection(Collection<TestFile> t) {
-		testFiles = t;
-	}
-
-	/**
-	 * Create a static method to get instance.
-	 */
-	public static TSmellsDetection getInstance(Collection<TestFile> t) {
-		if (detectionObj == null) {
-			detectionObj = new TSmellsDetection(t);
-		}
-		return detectionObj;
-	}
-
-	/**
-	 * Create a static method to get instance.
-	 */
-	public static TSmellsDetection getInstance() {
-		return detectionObj;
+	protected TSmellsDetection(TestFile tf) {
+		testFile = tf;
 	}
 
 	public void detectSmells() {
 		TestSmellDetector testSmellDetector = TestSmellDetector.createTestSmellDetector();
-
 		TestFile tempFile;
-		for (TestFile file : testFiles) {
-			try {
-				tempFile = testSmellDetector.detectSmells(file);
-				paths.put(file.getProductionFilePath(), file.getTestFilePath());
-				for (AbstractSmell smell : tempFile.getTestSmells()) {
-					try {
-						smells.put(smell.getSmellName(), smell.getHasSmell());
-					} catch (NullPointerException e) {
-
+		try {
+			tempFile = testSmellDetector.detectSmells(testFile);
+			paths = new SimpleEntry<String, String>(testFile.getProductionFilePath(),testFile.getTestFilePath());
+			for (AbstractSmell smell : tempFile.getTestSmells()) {
+				try {
+					if (smell.getHasSmell()) {
+						smells.add(smell.getSmellName());
 					}
+				} catch (NullPointerException e) {
+	
 				}
-			} catch (IOException e) {
-				e.printStackTrace();
 			}
+		} catch (IOException e) {
+			e.printStackTrace();
 		}
+//		for (TestFile file : testFiles) {
+//			try {
+//				tempFile = testSmellDetector.detectSmells(file);
+//				paths.put(file.getProductionFilePath(), file.getTestFilePath());
+//				for (AbstractSmell smell : tempFile.getTestSmells()) {
+//					try {
+//						smells.put(smell.getSmellName(), smell.getHasSmell());
+//					} catch (NullPointerException e) {
+//
+//					}
+//				}
+//			} catch (IOException e) {
+//				e.printStackTrace();
+//			}
+//		}
 	}
 
 	public String[] getProdFilePath() {
-		String[] tempProdFilePaths = new String[paths.keySet().size()];
-		Object[] prodFileKeySet = paths.keySet().toArray();
+		String[] tempProdFilePaths = new String[smells.size()];
+		String prodFile = paths.getKey();
 		for (int i = 0; i < tempProdFilePaths.length; i++) {
-			tempProdFilePaths[i] = (String) prodFileKeySet[i];
+			tempProdFilePaths[i] = (String) prodFile;
 		}
 		return tempProdFilePaths;
 	}
 
 	public String[] getTestFilePath() {
-		String[] tempTestFilePaths = new String[paths.values().size()];
-		Object[] tempTestFileValues = paths.values().toArray();
+		String[] tempTestFilePaths = new String[smells.size()];
+		String tempTestFile = paths.getValue();
 		for (int i = 0; i < tempTestFilePaths.length; i++) {
-			tempTestFilePaths[i] = (String) tempTestFileValues[i];
+			tempTestFilePaths[i] = tempTestFile;
 		}
 		return tempTestFilePaths;
 	}
 
 	public String[] getSmellNames() {
-		String[] tempSmellNames = new String[smells.keySet().size()];
-		Object[] tempSmellNamesKeySet = smells.keySet().toArray();
-		for (int i = 0; i < tempSmellNames.length; i++) {
-			tempSmellNames[i] = (String) tempSmellNamesKeySet[i];
+		String[] tempSmellNames = new String[smells.size()];
+		for (int i = 0; i < smells.size(); i++)
+		{
+			tempSmellNames[i] = smells.get(i);
 		}
 		return tempSmellNames;
 	}
 
-	public String[] hasSmells() {
-		String[] tempHasSmells = new String[smells.values().size()];
-		Object[] tempHasSmellsValues = smells.values().toArray();
-		for (int i = 0; i < tempHasSmells.length; i++) {
-			tempHasSmells[i] = ((Boolean) tempHasSmellsValues[i]).toString();
-		}
-		return tempHasSmells;
-	}
+//	public String[] hasSmells() {
+//		String[] tempHasSmells = new String[smells.size()];
+//		Object[] tempHasSmellsValues = smells.values().toArray();
+//		for (int i = 0; i < tempHasSmells.length; i++) {
+//			tempHasSmells[i] = ((Boolean) tempHasSmellsValues[i]).toString();
+//		}
+//		return tempHasSmells;
+//	}
 }
