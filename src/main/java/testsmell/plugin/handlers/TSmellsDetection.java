@@ -7,16 +7,25 @@ import main.java.testsmell.AbstractSmell;
 import main.java.testsmell.TestFile;
 import main.java.testsmell.TestSmellDetector;
 
+/**
+ * Detection class to encapsulate test smell detection objects.
+ */
 public class TSmellsDetection {
-	
 	private SimpleEntry<String, String> paths;
 	private ArrayList<String> smells = new ArrayList<String>();
 	private TestFile testFile;
-
+	
+	/**
+	 * Constructor that takes in a test file to create the test smell detection object.
+	 * @param tf
+	 */
 	protected TSmellsDetection(TestFile tf) {
 		testFile = tf;
 	}
-
+	
+	/**
+	 * Creates an instance of the test smell detector and runs the detect smells on a list of test files.
+	 */
 	public void detectSmells() {
 		TestSmellDetector testSmellDetector = TestSmellDetector.createTestSmellDetector();
 		TestFile tempFile;
@@ -35,56 +44,53 @@ public class TSmellsDetection {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-//		for (TestFile file : testFiles) {
-//			try {
-//				tempFile = testSmellDetector.detectSmells(file);
-//				paths.put(file.getProductionFilePath(), file.getTestFilePath());
-//				for (AbstractSmell smell : tempFile.getTestSmells()) {
-//					try {
-//						smells.put(smell.getSmellName(), smell.getHasSmell());
-//					} catch (NullPointerException e) {
-//
-//					}
-//				}
-//			} catch (IOException e) {
-//				e.printStackTrace();
-//			}
-//		}
 	}
-
+	
+	/**
+	 * Gets production file paths.
+	 * @return
+	 */
 	public String[] getProdFilePath() {
 		String[] tempProdFilePaths = new String[smells.size()];
-		String prodFile = paths.getKey();
+		String prodFile = null;
+		if (paths != null)
+			if (paths.getKey() != null)
+				prodFile = paths.getKey();
+			else return null;
+		else return null;
 		for (int i = 0; i < tempProdFilePaths.length; i++) {
-			tempProdFilePaths[i] = (String) prodFile;
+			tempProdFilePaths[i] =  prodFile;
 		}
 		return tempProdFilePaths;
 	}
-
+	
+	/**
+	 * Gets test file paths.
+	 * @return
+	 */
 	public String[] getTestFilePath() {
 		String[] tempTestFilePaths = new String[smells.size()];
-		String tempTestFile = paths.getValue();
+		String tempTestFile = null;
+		if (paths != null )
+			if (paths.getKey() != null)
+				tempTestFile = paths.getValue();
+			else return null;
+		else return null;
 		for (int i = 0; i < tempTestFilePaths.length; i++) {
 			tempTestFilePaths[i] = tempTestFile;
 		}
 		return tempTestFilePaths;
 	}
-
+	
+	/**
+	 * Gets test smell names.
+	 * @return
+	 */
 	public String[] getSmellNames() {
 		String[] tempSmellNames = new String[smells.size()];
-		for (int i = 0; i < smells.size(); i++)
-		{
+		for (int i = 0; i < smells.size(); i++) {
 			tempSmellNames[i] = smells.get(i);
 		}
 		return tempSmellNames;
 	}
-
-//	public String[] hasSmells() {
-//		String[] tempHasSmells = new String[smells.size()];
-//		Object[] tempHasSmellsValues = smells.values().toArray();
-//		for (int i = 0; i < tempHasSmells.length; i++) {
-//			tempHasSmells[i] = ((Boolean) tempHasSmellsValues[i]).toString();
-//		}
-//		return tempHasSmells;
-//	}
 }

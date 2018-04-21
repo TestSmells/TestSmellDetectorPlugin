@@ -36,6 +36,7 @@ import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.handlers.HandlerUtil;
 
 import main.java.testsmell.TestFile;
+import main.java.testsmell.plugin.views.TSmellsDialog;
 
 /**
  * A handler class for the the test smells plugin.
@@ -47,36 +48,37 @@ public class TSmellsHandler extends AbstractHandler {
 	private HashMap<IResource, IResource> paths = new HashMap<>();
 	private IProject project;
 	private List<TestFile> testFiles = new ArrayList<TestFile>();
-	
-	@Override
+
 	/**
 	 * Launches the Test Smells Detector view when a project is selected and the
 	 * plugin icon is activated.
 	 */
+	@Override
 	public Object execute(ExecutionEvent event) throws ExecutionException {
 		Shell activeShell = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getShell();
+
 		try {
 			project = getCurrentProject(event);
-			getProjectInfo(project);
+			createTestFiles(project);
 		} catch (CoreException | NullPointerException ex) {
 			ex.printStackTrace();
 			MessageDialog.openError(activeShell, "TestSmellDetector", "Please select a project");
 			return null;
 		}
-		
+
 		IWorkbenchPage page = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage();
 		try {
-			TSmellsDetectionCollection colllectionObj = TSmellsDetectionCollection.getInstance();
-			colllectionObj.addNewDetections(testFiles);
-			TSmellsDetection detect = colllectionObj.getNextDetection();
-			while (detect != null)
-			{
+			TSmellsDetectionCollection collectionObj = TSmellsDetectionCollection.getInstance();
+			collectionObj.addNewDetections(testFiles);
+			TSmellsDetection detect = collectionObj.getNextDetection();
+			while (detect != null) {
 				detect.detectSmells();
-				detect = colllectionObj.getNextDetection();
+				detect = collectionObj.getNextDetection();
 			}
-			colllectionObj.resetNextIndexVal();
+			collectionObj.resetNextIndexVal();
 			page.showView("TestSmellsDetector.view");
-
+			testFiles.clear();
+			collectionObj.clearTSmellsCollection();
 		} catch (PartInitException e) {
 			e.printStackTrace();
 		}
@@ -106,74 +108,58 @@ public class TSmellsHandler extends AbstractHandler {
 	}
 
 	/**
-	 * Gets information about the given project.
+	 * Creates test files that can be analyzed for detection smells using 
+	 * both production and test file paths.
 	 * 
 	 * @param project
 	 * @throws CoreException
 	 * @throws JavaModelException
 	 */
-	private void getProjectInfo(IProject project) throws CoreException, JavaModelException {
-		System.out.println("Working in project " + project.getName());
+	private void createTestFiles(IProject project) throws CoreException, JavaModelException {
 		if (project.isNatureEnabled("org.eclipse.jdt.core.javanature")) {
 			IJavaProject javaProject = JavaCore.create(project);
 			IPackageFragment[] packages = javaProject.getPackageFragments();
 			for (IPackageFragment pkg : packages) {
 				if (pkg.getKind() == IPackageFragmentRoot.K_SOURCE) {
-					createTestFiles(pkg);
+					for (ICompilationUnit unit : pkg.getCompilationUnits()) {
+						testPaths = getTestFilePaths(unit);
+					}
 				}
 			}
 			if (testPaths.size() > 0) {
 				try {
-					getProdFiles();
+					getProdFilePaths();
 
 					TestFile testFile;
-					
+
 					for (Entry<IResource, IResource> fullPaths : paths.entrySet()) {
 						String prodFilePath = fullPaths.getKey().getRawLocation().toString();
 						String testFilePath = fullPaths.getValue().getRawLocation().toString();
 						testFile = new TestFile(project.getName(), testFilePath, prodFilePath);
 						testFiles.add(testFile);
-				}
+					}
 				} catch (NullPointerException e) {
 					Shell activeShell = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getShell();
-					String errorStr = "Recheck production and test file names. Below are the test file/production file mappings that triggered the exception: \n\n";
-					for (Entry<IResource, IResource> fullPaths : paths.entrySet())
-					{
-						if (fullPaths.getKey() == null)
-						{
-							errorStr += "Production File: null ,";
+					String errorStr = "Recheck production and test file names. "
+							+ "\nPlease restart your workspace after the file names have been corrected. "
+							+ "\nBelow are the test file/production file mappings that triggered the exception: \n\n";
+					for (Entry<IResource, IResource> fullPaths : paths.entrySet()) {
+						if (fullPaths.getKey() == null) {
+							errorStr += "Production File: null\n";
+						} else {
+							errorStr += "Production File: " + fullPaths.getKey().getRawLocation().toString() + "\n";
 						}
-						else 
-						{
-							errorStr += "Production File: " + fullPaths.getKey().getRawLocation().toString() + " ,";
+
+						if (fullPaths.getValue() == null) {
+							errorStr += "Test File: null\n";
+						} else {
+							errorStr += "Test File: " + fullPaths.getValue().getRawLocation().toString() + " \n\n";
 						}
-						
-						if (fullPaths.getValue() == null)
-						{
-							errorStr += "Test File: null ,";
-						}
-						else 
-						{
-							errorStr += "Test File: " + fullPaths.getValue().getRawLocation().toString() + " \n\n"; 
-						}
-							
 					}
-					MessageDialog.openError(activeShell, "Failed to load files" , errorStr );
+					TSmellsDialog dialog = new TSmellsDialog(activeShell, "Failed to load files", errorStr);
+					dialog.open();
 				}
 			}
-		}
-	}
-
-	/**
-	 * Create test files that can be analyzed for smells using both production and
-	 * test files.
-	 * 
-	 * @param pkg
-	 * @throws JavaModelException
-	 */
-	private void createTestFiles(IPackageFragment pkg) throws JavaModelException {
-		for (ICompilationUnit unit : pkg.getCompilationUnits()) {
-			testPaths = getTestFiles(unit);
 		}
 	}
 
@@ -184,7 +170,7 @@ public class TSmellsHandler extends AbstractHandler {
 	 * @return
 	 * @throws JavaModelException
 	 */
-	private void getProdFiles() throws JavaModelException {
+	private void getProdFilePaths() throws JavaModelException {
 		HashMap<String, IResource> possibleProdFileNames = new HashMap<String, IResource>();
 		HashMap<String, IResource> potentialProdFiles = new HashMap<>();
 		for (IResource test : testPaths) {
@@ -262,9 +248,8 @@ public class TSmellsHandler extends AbstractHandler {
 	 * @return
 	 * @throws JavaModelException
 	 */
-	@SuppressWarnings("deprecation")
-	private ArrayList<IResource> getTestFiles(ICompilationUnit unit) throws JavaModelException {
-		ASTParser parser = ASTParser.newParser(AST.JLS8);
+	private ArrayList<IResource> getTestFilePaths(ICompilationUnit unit) throws JavaModelException {
+		ASTParser parser = ASTParser.newParser(AST.JLS9);
 		parser.setKind(ASTParser.K_COMPILATION_UNIT);
 		parser.setSource(unit);
 		final CompilationUnit cu = (CompilationUnit) parser.createAST(null);
