@@ -5,47 +5,47 @@ import java.util.Collection;
 import main.java.testsmell.TestFile;
 
 /**
- * Collection class to handle and store test smells detection objects.
+ * Collection class to handle and store test smell detection objects.
  */
-public class TSmellsDetectionCollection {
+public class TSmellDetectionCollection {
 
-	private static TSmellsDetectionCollection detectionCollectionObj = null;
+	private static TSmellDetectionCollection detectionCollectionObj = null;
 	private int nextIndx;
-	private ArrayList<TSmellsDetection> collection;
+	private ArrayList<TSmellDetection> collection;
 	
 	/**
 	 * Constructor to initialize a collection object and initialize the next index.
 	 */
-	private TSmellsDetectionCollection() {
-		collection = new ArrayList<TSmellsDetection>();
+	private TSmellDetectionCollection() {
+		collection = new ArrayList<TSmellDetection>();
 		nextIndx = 0;
 	}
 
 	/**
 	 * Gets a static instance of the test smell detection collection object.
 	 */
-	protected static TSmellsDetectionCollection getInstance() {
+	protected static TSmellDetectionCollection getInstance() {
 		if (detectionCollectionObj == null) {
-			detectionCollectionObj = new TSmellsDetectionCollection();
+			detectionCollectionObj = new TSmellDetectionCollection();
 		}
 		return detectionCollectionObj;
 	}
 	
 	/**
-	 * Gets an existing of a test smells detection collection object.
+	 * Gets an existing of a test smell detection collection object.
 	 * @return
 	 */
-	public static TSmellsDetectionCollection getExistingInstance() {
+	public static TSmellDetectionCollection getExistingInstance() {
 		return detectionCollectionObj;
 	}
 	
 	/**
-	 * Adds new test smells detection objects to the collection.
+	 * Adds new test smell detection objects to the collection.
 	 * @param t
 	 */
 	public void addNewDetections(Collection<TestFile> t) {
 		for (TestFile tf : t) {
-			collection.add(new TSmellsDetection(tf));
+			collection.add(new TSmellDetection(tf));
 		}
 	}
 	
@@ -65,8 +65,8 @@ public class TSmellsDetectionCollection {
 	 * Gets the next detection found in the collection.
 	 * @return
 	 */
-	public TSmellsDetection getNextDetection() {
-		TSmellsDetection detection;
+	public TSmellDetection getNextDetection() {
+		TSmellDetection detection;
 		if (hasNextDetection()) {
 			detection = collection.get(nextIndx);
 			nextIndx += 1;
@@ -83,7 +83,7 @@ public class TSmellsDetectionCollection {
 	}
 
 	/**
-	 * Clears the test smells collection and resets the next index.
+	 * Clears the test smell collection and resets the next index.
 	 */
 	protected void clearTSmellsCollection() {
 		collection.clear();

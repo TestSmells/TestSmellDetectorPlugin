@@ -1,6 +1,6 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
-Bundle-Name: TestSmellsDetector
+Bundle-Name: TestSmellDetector
 Bundle-SymbolicName: main.java.testsmell.plugin;singleton:=true
 Bundle-Version: 1.0.0
 Bundle-Activator: main.java.testsmell.plugin.Activator
@@ -28,9 +28,14 @@ Export-Package: com.github.javaparser;
    com.github.javaparser.ast.validator,
    com.github.javaparser.ast.expr",
  main.java,
- main.java.testsmell,
- main.java.testsmell.plugin,
- main.java.testsmell.plugin.handlers,
- main.java.testsmell.plugin.views,
- main.java.testsmell.smell
+ main.java.testsmell;uses:="com.github.javaparser.ast.body,com.github.javaparser.ast",
+ main.java.testsmell.plugin;uses:="org.osgi.framework,org.eclipse.jface.resource,org.eclipse.ui.plugin",
+ main.java.testsmell.plugin.handlers;uses:="org.eclipse.core.commands,main.java.testsmell",
+ main.java.testsmell.plugin.views;
+  uses:="org.eclipse.swt.graphics,
+   org.eclipse.swt.widgets,
+   org.eclipse.jface.dialogs,
+   org.eclipse.jface.viewers,
+   org.eclipse.ui.part",
+ main.java.testsmell.smell;uses:="com.github.javaparser.ast.body,com.github.javaparser.ast,main.java.testsmell"
 Bundle-Vendor: Rochester Institute of Technology

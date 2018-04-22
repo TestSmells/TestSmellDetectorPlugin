@@ -5,25 +5,25 @@
          point="org.eclipse.ui.commands">
       <category
             name="Test Smell Detector Category"
-            id="TestSmells.commands.category">
+            id="TestSmell.commands.category">
       </category>
       <command
             name="Test Smell Detector Command"
-            categoryId="TestSmells.commands.category"
-            id="TestSmell.commands.TSmellsCommand">
+            categoryId="TestSmell.commands.category"
+            id="TestSmell.commands.TSmellCommand">
       </command>
    </extension>
    <extension
          point="org.eclipse.ui.handlers">
       <handler
-            commandId="TestSmell.commands.TSmellsCommand"
-            class="main.java.testsmell.plugin.handlers.TSmellsHandler">
+            commandId="TestSmell.commands.TSmellCommand"
+            class="main.java.testsmell.plugin.handlers.TSmellHandler">
       </handler>
    </extension>
    <extension
          point="org.eclipse.ui.bindings">
       <key
-            commandId="TestSmell.commands.TSmellsCommand"
+            commandId="TestSmell.commands.TSmellCommand"
             contextId="org.eclipse.ui.contexts.window"
             sequence="M1+6"
             schemeId="org.eclipse.ui.defaultAcceleratorConfiguration">
@@ -34,12 +34,12 @@
       <menuContribution
             locationURI="toolbar:org.eclipse.ui.main.toolbar?after=additions">
          <toolbar
-               id="TestSmell.toolbars.TSmellsToolbar">
+               id="TestSmell.toolbars.TSmellToolbar">
             <command
-                  commandId="TestSmell.commands.TSmellsCommand"
+                  commandId="TestSmell.commands.TSmellCommand"
                   icon="icons/nose.png"
                   tooltip="Run Test Smell Detector"
-                  id="TestSmell.toolbars.TSmellsCommand">
+                  id="TestSmell.toolbars.TSmellCommand">
             </command>
          </toolbar>
       </menuContribution>
@@ -48,11 +48,11 @@
          point="org.eclipse.ui.views">
       <view
             allowMultiple="false"
-            class="main.java.testsmell.plugin.views.TSmellsView"
+            class="main.java.testsmell.plugin.views.TSmellView"
             icon="icons/nose.png"
-            id="TestSmellsDetector.view"
+            id="TestSmellDetector.view"
             inject="false"
-            name="Test Smells Detector"
+            name="Test Smell Detector"
             restorable="true">
       </view>
    </extension>
@@ -62,9 +62,9 @@
             targetID="org.eclipse.jdt.ui.JavaPerspective">
          <view
                closeable="true"
-               id="TestSmellsDetector.view"
+               id="TestSmellDetector.view"
                relationship="stack"
-               relative="TestSmellsDetector.view"
+               relative="TestSmellDetector.view"
                showTitle="true"
                visible="false">
          </view>

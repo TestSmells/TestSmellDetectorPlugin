@@ -18,7 +18,7 @@ import org.eclipse.swt.widgets.Shell;
  * Custom dialog class to display error messages.
  * Overrides functionality from the IconAndMessageDialog class.
  */
-public class TSmellsDialog extends IconAndMessageDialog {
+public class TSmellDialog extends IconAndMessageDialog {
 	private String title;
 	private String message;
 
@@ -28,7 +28,7 @@ public class TSmellsDialog extends IconAndMessageDialog {
 	 * @param t
 	 * @param msg
 	 */
-	public TSmellsDialog(Shell parentShell, String t, String msg) {
+	public TSmellDialog(Shell parentShell, String t, String msg) {
 		super(parentShell);
 		title = t;
 		message = msg;

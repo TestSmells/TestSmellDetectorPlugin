@@ -30,27 +30,29 @@ import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.swt.widgets.Shell;
+import org.eclipse.ui.IViewPart;
 import org.eclipse.ui.IWorkbenchPage;
 import org.eclipse.ui.PartInitException;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.handlers.HandlerUtil;
 
 import main.java.testsmell.TestFile;
-import main.java.testsmell.plugin.views.TSmellsDialog;
+import main.java.testsmell.plugin.views.TSmellDialog;
+import main.java.testsmell.plugin.views.TSmellView;
 
 /**
- * A handler class for the the test smells plugin.
+ * A handler class for the the test smell plugin.
  * 
  * @see org.eclipse.core.commands.AbstractHandler
  */
-public class TSmellsHandler extends AbstractHandler {
+public class TSmellHandler extends AbstractHandler {
 	private ArrayList<IResource> testPaths = new ArrayList<IResource>();
 	private HashMap<IResource, IResource> paths = new HashMap<>();
 	private IProject project;
 	private List<TestFile> testFiles = new ArrayList<TestFile>();
 
 	/**
-	 * Launches the Test Smells Detector view when a project is selected and the
+	 * Launches the Test Smell Detector view when a project is selected and the
 	 * plugin icon is activated.
 	 */
 	@Override
@@ -62,21 +64,26 @@ public class TSmellsHandler extends AbstractHandler {
 			createTestFiles(project);
 		} catch (CoreException | NullPointerException ex) {
 			ex.printStackTrace();
-			MessageDialog.openError(activeShell, "TestSmellDetector", "Please select a project");
+			MessageDialog.openError(activeShell, "Test Smell Detector", "Please select a project");
 			return null;
 		}
 
 		IWorkbenchPage page = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage();
 		try {
-			TSmellsDetectionCollection collectionObj = TSmellsDetectionCollection.getInstance();
+			TSmellDetectionCollection collectionObj = TSmellDetectionCollection.getInstance();
 			collectionObj.addNewDetections(testFiles);
-			TSmellsDetection detect = collectionObj.getNextDetection();
+			TSmellDetection detect = collectionObj.getNextDetection();
 			while (detect != null) {
 				detect.detectSmells();
 				detect = collectionObj.getNextDetection();
 			}
+			if(page.findView("TestSmellDetector.view") != null) {
+				IViewPart viewPart = page.findView("TestSmellDetector.view");
+				TSmellView tSmellView = (TSmellView)viewPart;
+				page.hideView(tSmellView);
+			}
 			collectionObj.resetNextIndexVal();
-			page.showView("TestSmellsDetector.view");
+			page.showView("TestSmellDetector.view");
 			testFiles.clear();
 			collectionObj.clearTSmellsCollection();
 		} catch (PartInitException e) {
@@ -156,7 +163,7 @@ public class TSmellsHandler extends AbstractHandler {
 							errorStr += "Test File: " + fullPaths.getValue().getRawLocation().toString() + " \n\n";
 						}
 					}
-					TSmellsDialog dialog = new TSmellsDialog(activeShell, "Failed to load files", errorStr);
+					TSmellDialog dialog = new TSmellDialog(activeShell, "Failed to load files", errorStr);
 					dialog.open();
 				}
 			}
