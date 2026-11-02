@@ -89,7 +89,7 @@ Results are reported in three places:
 - **Editor markers** — a warning marker on the line of each affected method.
   Hovering a marker shows the smell name, an explanation, and a suggested fix.
 - **Problems view** — the same findings as standard Eclipse problems, with
-  description, resource, and line number.
+  description, resource, and line number. (Located in Windows → Show Views → Problems)
 
 Markers are cleared and rebuilt on each run, so results never go stale.
 
