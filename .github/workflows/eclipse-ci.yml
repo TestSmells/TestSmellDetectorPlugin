@@ -20,7 +20,7 @@ env:
   # The shared regression corpus lives in the VS Code repository. Pin the ref so
   # a corpus change cannot silently alter this repository's results; bump it
   # deliberately when adopting new cases.
-  CORPUS_REPOSITORY: TestSmells/VSCode-Plugin
+  CORPUS_REPOSITORY: TestSmells/tsdetect-vscode-extension
   CORPUS_REF: 117c2f1f585aeb97c3940ede420ad64afe9c58ae
 
 jobs:
