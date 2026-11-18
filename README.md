@@ -105,23 +105,34 @@ engine code is out of scope for this plugin.
 
 ### File naming convention
 
-The plugin pairs a test file with its production file by removing the first four
-characters of the test filename. A file named `testExample.java` is matched to
-`Example.java`.
+The plugin pairs a test file with the production file it exercises by name. These
+conventions are recognised:
 
-The widely used `ExampleTest.java` convention is **not** supported — it produces
-no match, and the run reports a file-pairing error. This is inherited behaviour
-from the detection engine. See Known limitations.
+| Test file | Production file |
+|---|---|
+| `testExample.java` | `Example.java` |
+| `TestExample.java` | `Example.java` |
+| `ExampleTest.java` | `Example.java` |
+| `ExampleTests.java` | `Example.java` |
+| `ExampleTestCase.java` | `Example.java` |
+| `ExampleIT.java` | `Example.java` |
+
+Matching is by file name, so the production file may live anywhere in the project
+— a Maven layout with `src/main/java` and `src/test/java` works.
+
+A test file matching none of these is skipped and named in a dialog at the end of
+the run. The rest of the project is still analyzed.
 
 ### Known limitations
 
-**Test file naming.** Only the `testExample.java` → `Example.java` convention is
-supported (see above). Projects using `ExampleTest.java` cannot be analyzed.
+**Test file naming.** Test files must follow one of the recognised conventions
+listed above. A file named in some other way cannot be paired with its production
+file and is skipped, with a dialog naming it.
 
-**Analysis runs on the UI thread.** The workbench does not repaint while
-detection runs. This is imperceptible at typical project sizes — roughly 750 ms
-for 200 test files — but would be noticeable on a very large codebase. See
-`documentation/performance.md`.
+**Test methods are found by name.** A method counts as a test when its name starts
+with `test` or `Test`. JUnit 5 tests named for behaviour rather than prefixed —
+`shouldReturnZeroWhenEmpty()`, say — are not recognised, even when annotated
+`@Test`.
 
 **Detection is on demand.** The plugin does not analyze automatically when a
 file is saved. Analysis must be triggered explicitly.

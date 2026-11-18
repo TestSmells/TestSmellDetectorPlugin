@@ -245,13 +245,17 @@ The engine exposes the responsible elements through
 All 21 detectors always run and all results are always reported (§2.4). A team that
 accepts some smells has no way to quieten them. **In scope.** → later filed as #15
 
-### F10 — File pairing is convention-bound and undocumented
-The handler pairs a test file with its production file by stripping the first four
-characters of the filename, supporting only `testExample.java` → `Example.java`.
-The widely used `ExampleTest.java` convention produces no match and the run fails.
-**In scope** as a limitation to document; changing the convention would alter
-engine expectations. → documented in `README.md` and
-`documentation/regression-baseline.md`
+### F10 — File pairing is convention-bound, and failure is fatal
+`TSmellHandler` pairs a test file with its production file by stripping the first
+four characters of the filename, supporting only `testExample.java` →
+`Example.java`. `ExampleTest.java` yields a name matching nothing, and the
+resulting null throws a `NullPointerException` that aborts the whole run — so one
+oddly named file means a project of any size is analyzed not at all.
+
+Pairing is decided entirely in the plugin: `TestFile` stores whichever two paths
+it is given, and the engine never derives one name from the other. **In scope**,
+and no engine change is involved. → fixed; the recognised conventions are listed
+in `README.md`
 
 ### F11 — No headless build exists
 `pom.xml` is the CLI's POM and does not build the bundle (§3.2). **In scope** but

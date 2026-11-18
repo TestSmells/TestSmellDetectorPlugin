@@ -95,19 +95,15 @@ triggering detection automatically on file save has been removed.
 
 ## Limitations
 
-**The large corpora are synthetic.** The plugin pairs a test file with its
-production file by removing the first four characters of the filename, so it
-supports only the `testExample.java` → `Example.java` convention. The widely
-used `ExampleTest.java` convention produces no match, and the run fails with a
-file-pairing error rather than returning results.
+**The large corpora are synthetic.** They are generated rather than taken from a
+real project, so every file is structurally similar and the smell mix is uniform.
+A real codebase of the same size would vary more.
 
-This made benchmarking against a real open-source Java project impractical, and
-is a limitation of the tool rather than of the measurement. It is recorded in
-`documentation/regression-baseline.md` alongside the other engine findings.
-
-The same constraint bounds how much the residual marker-flush cost matters in
-practice: a project large enough for it to become visible is a project the
-plugin cannot pair files for in the first place.
+These figures were taken while the plugin supported only the
+`testExample.java` → `Example.java` convention, which is why the corpora use that
+naming. Pairing now recognises `ExampleTest.java` and several other conventions,
+so benchmarking against a real open-source project has become practical; the
+figures here have not yet been re-taken on one.
 
 **Timing covers detection and marker creation.** Populating the results table
 happens after the measured window and is not included in the figures above.

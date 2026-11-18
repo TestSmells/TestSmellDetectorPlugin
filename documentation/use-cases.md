@@ -24,8 +24,9 @@
 ## Assumptions and constraints
 
 - The project under analysis has the Java nature enabled.
-- Test files follow the `testExample.java` ↔ `Example.java` naming convention. The
-  `ExampleTest.java` convention is not supported — see §Limitations.
+- Test files follow one of the recognised naming conventions — `testExample.java`,
+  `ExampleTest.java`, `ExampleTests.java`, `ExampleTestCase.java` or
+  `ExampleIT.java`, each paired with `Example.java`.
 - The tsDetect engine is used unmodified, per the SRS technical constraint. The
   plugin supplies input and presents results; it does not alter detection logic.
 
@@ -305,11 +306,11 @@ page are available.
 These constrain the use cases above and are recorded here so they are not
 rediscovered as defects.
 
-**File pairing.** A test file is matched to its production file by stripping the
-first four characters of the filename, so only `testExample.java` → `Example.java`
-is supported. `ExampleTest.java` produces no match and the run reports a pairing
-failure. Changing this would alter what the engine expects, which the SRS
-constraint places out of scope.
+**File pairing is by name.** A test file is matched to its production file by
+name, across the conventions listed in `README.md`. A file matching none of them
+is skipped and named in a dialog; the rest of the project is still analyzed.
+Pairing happens in the plugin rather than the engine, so the recognised set can be
+extended without touching engine code.
 
 **Dependent Test is never reported.** The detector compares a `String` to a
 `Stream`, which is always false, and never sets its smell flag. It cannot fire
