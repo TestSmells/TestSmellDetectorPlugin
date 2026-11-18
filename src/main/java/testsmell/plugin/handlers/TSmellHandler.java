@@ -57,7 +57,10 @@ import main.java.testsmell.plugin.views.TSmellDialog;
  */
 public class TSmellHandler extends AbstractHandler {
 	private ArrayList<IResource> testPaths = new ArrayList<IResource>();
+	/** Test file resource -> the production file it was paired with. */
 	private HashMap<IResource, IResource> paths = new HashMap<>();
+	/** Test files that matched no production file, reported once after a run. */
+	private List<IResource> unmatchedTestFiles = new ArrayList<IResource>();
 	private IProject project;
 	private List<TestFile> testFiles = new ArrayList<TestFile>();
 
@@ -81,6 +84,7 @@ public class TSmellHandler extends AbstractHandler {
 		long startTime = System.currentTimeMillis();
 		testPaths.clear();
 		paths.clear();
+		unmatchedTestFiles.clear();
 		testFiles.clear();
 		Shell activeShell = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getShell();
 
@@ -276,51 +280,79 @@ public class TSmellHandler extends AbstractHandler {
 	 * @throws JavaModelException
 	 */
 	private void createTestFiles(IProject project) throws CoreException, JavaModelException {
-		if (project.isNatureEnabled("org.eclipse.jdt.core.javanature")) {
-			IJavaProject javaProject = JavaCore.create(project);
-			IPackageFragment[] packages = javaProject.getPackageFragments();
-			for (IPackageFragment pkg : packages) {
-				if (pkg.getKind() == IPackageFragmentRoot.K_SOURCE) {
-					for (ICompilationUnit unit : pkg.getCompilationUnits()) {
-						testPaths = getTestFilePaths(unit);
-					}
-				}
-			}
-			if (testPaths.size() > 0) {
-				try {
-					getProdFilePaths();
+		if (!project.isNatureEnabled("org.eclipse.jdt.core.javanature")) {
+			return;
+		}
 
-					TestFile testFile;
-
-					for (Entry<IResource, IResource> fullPaths : paths.entrySet()) {
-						String prodFilePath = fullPaths.getKey().getRawLocation().toOSString();
-						String testFilePath = fullPaths.getValue().getRawLocation().toOSString();
-						testFile = new TestFile(project.getName(), testFilePath, prodFilePath);
-						testFiles.add(testFile);
-					}
-				} catch (NullPointerException e) {
-					Shell activeShell = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getShell();
-					String errorStr = "Recheck production and test file names. "
-							+ "\nPlease restart your workspace after the file names have been corrected. "
-							+ "\nBelow are the test file/production file mappings that triggered the exception: \n\n";
-					for (Entry<IResource, IResource> fullPaths : paths.entrySet()) {
-						if (fullPaths.getKey() == null) {
-							errorStr += "Production File: null\n";
-						} else {
-							errorStr += "Production File: " + fullPaths.getKey().getRawLocation().toString() + "\n";
-						}
-
-						if (fullPaths.getValue() == null) {
-							errorStr += "Test File: null\n";
-						} else {
-							errorStr += "Test File: " + fullPaths.getValue().getRawLocation().toString() + " \n\n";
-						}
-					}
-					TSmellDialog dialog = new TSmellDialog(activeShell, "Failed to load files", errorStr);
-					dialog.open();
+		IJavaProject javaProject = JavaCore.create(project);
+		IPackageFragment[] packages = javaProject.getPackageFragments();
+		for (IPackageFragment pkg : packages) {
+			if (pkg.getKind() == IPackageFragmentRoot.K_SOURCE) {
+				for (ICompilationUnit unit : pkg.getCompilationUnits()) {
+					collectTestFilePath(unit);
 				}
 			}
 		}
+
+		if (testPaths.isEmpty()) {
+			return;
+		}
+
+		getProdFilePaths();
+
+		for (Entry<IResource, IResource> pair : paths.entrySet()) {
+			IResource test = pair.getKey();
+			IResource prod = pair.getValue();
+			if (test == null || prod == null) {
+				continue;
+			}
+			String testFilePath = test.getRawLocation().toOSString();
+			String prodFilePath = prod.getRawLocation().toOSString();
+			testFiles.add(new TestFile(project.getName(), testFilePath, prodFilePath));
+		}
+
+		// Unmatched files are skipped rather than aborting the run, so one oddly
+		// named file no longer prevents the rest of the project being analyzed.
+		if (!unmatchedTestFiles.isEmpty()) {
+			reportUnmatchedTestFiles();
+		}
+	}
+
+	/**
+	 * Tells the user which test files could not be paired, and which naming
+	 * conventions are recognised. Analysis of the files that did pair has already
+	 * happened by this point.
+	 */
+	private void reportUnmatchedTestFiles() {
+		StringBuilder message = new StringBuilder();
+		message.append(unmatchedTestFiles.size());
+		message.append(unmatchedTestFiles.size() == 1 ? " test file could not be matched"
+				: " test files could not be matched");
+		message.append(" to a production file and was skipped.\n");
+		message.append("The rest of the project was analyzed normally.\n\n");
+		message.append("A test file is paired with the production file it exercises by name.\n");
+		message.append("These conventions are recognised:\n\n");
+		message.append("    testExample.java   ->  Example.java\n");
+		message.append("    TestExample.java   ->  Example.java\n");
+		message.append("    ExampleTest.java   ->  Example.java\n");
+		message.append("    ExampleTests.java  ->  Example.java\n");
+		message.append("    ExampleTestCase.java  ->  Example.java\n");
+		message.append("    ExampleIT.java     ->  Example.java\n\n");
+		message.append("Skipped:\n\n");
+
+		int shown = 0;
+		for (IResource unmatched : unmatchedTestFiles) {
+			if (shown == 20) {
+				message.append("    ...and ").append(unmatchedTestFiles.size() - shown).append(" more\n");
+				break;
+			}
+			message.append("    ").append(unmatched.getFullPath().toString()).append("\n");
+			shown++;
+		}
+
+		Shell activeShell = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getShell();
+		TSmellDialog dialog = new TSmellDialog(activeShell, "Some test files were skipped", message.toString());
+		dialog.open();
 	}
 
 	/**
@@ -331,15 +363,7 @@ public class TSmellHandler extends AbstractHandler {
 	 * @throws JavaModelException
 	 */
 	private void getProdFilePaths() throws JavaModelException {
-		HashMap<String, IResource> possibleProdFileNames = new HashMap<String, IResource>();
-		HashMap<String, IResource> potentialProdFiles = new HashMap<>();
-		for (IResource test : testPaths) {
-
-			String fileName = test.getName();
-			int prefixLength = "test".length();
-			String prodFileName = fileName.substring(prefixLength, fileName.length());
-			possibleProdFileNames.put(prodFileName, test);
-		}
+		HashMap<String, IResource> potentialProdFiles = new HashMap<String, IResource>();
 
 		IContainer container = containerForPath(project.getFullPath());
 		try {
@@ -348,12 +372,72 @@ public class TSmellHandler extends AbstractHandler {
 			e.printStackTrace();
 		}
 
-		for (Entry<String, IResource> possibleNames : possibleProdFileNames.entrySet()) {
-			String key = possibleNames.getKey();
-			IResource prodIRes = potentialProdFiles.get(key);
-			IResource testIRes = possibleNames.getValue();
-			paths.put(prodIRes, testIRes);
+		for (IResource test : testPaths) {
+			IResource prodIRes = null;
+
+			for (String candidate : productionFileCandidates(test.getName())) {
+				prodIRes = potentialProdFiles.get(candidate);
+				if (prodIRes != null) {
+					break;
+				}
+			}
+
+			if (prodIRes == null) {
+				if (!unmatchedTestFiles.contains(test)) {
+					unmatchedTestFiles.add(test);
+				}
+			} else {
+				paths.put(test, prodIRes);
+			}
 		}
+	}
+
+	/**
+	 * Production file names that could correspond to a given test file name, in
+	 * the order they should be tried.
+	 *
+	 * <p>
+	 * The original implementation removed the first four characters of every test
+	 * file name, which only works for the {@code testExample.java} convention. The
+	 * widely used {@code ExampleTest.java} convention produced a name that matched
+	 * nothing, and the resulting null aborted the entire run.
+	 *
+	 * <pre>
+	 *   testExample.java      -&gt;  Example.java
+	 *   TestExample.java      -&gt;  Example.java
+	 *   ExampleTest.java      -&gt;  Example.java
+	 *   ExampleTests.java     -&gt;  Example.java
+	 *   ExampleTestCase.java  -&gt;  Example.java
+	 *   ExampleIT.java        -&gt;  Example.java
+	 * </pre>
+	 *
+	 * @param testFileName the simple file name of the test file, with extension
+	 * @return candidate production file names, possibly empty, never null
+	 */
+	private List<String> productionFileCandidates(String testFileName) {
+		List<String> candidates = new ArrayList<String>();
+
+		if (testFileName == null || !testFileName.endsWith(".java")) {
+			return candidates;
+		}
+
+		String baseName = testFileName.substring(0, testFileName.length() - ".java".length());
+
+		String[] prefixes = { "test", "Test" };
+		for (String prefix : prefixes) {
+			if (baseName.length() > prefix.length() && baseName.startsWith(prefix)) {
+				candidates.add(baseName.substring(prefix.length()) + ".java");
+			}
+		}
+
+		String[] suffixes = { "TestCase", "Tests", "Test", "IT" };
+		for (String suffix : suffixes) {
+			if (baseName.length() > suffix.length() && baseName.endsWith(suffix)) {
+				candidates.add(baseName.substring(0, baseName.length() - suffix.length()) + ".java");
+			}
+		}
+
+		return candidates;
 	}
 
 	/**
@@ -408,22 +492,26 @@ public class TSmellHandler extends AbstractHandler {
 	 * @return
 	 * @throws JavaModelException
 	 */
-	private ArrayList<IResource> getTestFilePaths(ICompilationUnit unit) throws JavaModelException {
+	private void collectTestFilePath(final ICompilationUnit unit) {
 		ASTParser parser = ASTParser.newParser(AST.getJLSLatest());
 		parser.setKind(ASTParser.K_COMPILATION_UNIT);
 		parser.setSource(unit);
 		final CompilationUnit cu = (CompilationUnit) parser.createAST(null);
 		cu.accept(new ASTVisitor() {
+			@Override
 			public boolean visit(MethodDeclaration node) {
-				if (node.getName().getIdentifier().startsWith("test")
-						|| node.getName().getIdentifier().startsWith("Test")
-								&& !testPaths.contains(unit.getResource())) {
+				// The original condition was
+				//     startsWith("test") || startsWith("Test") && !testPaths.contains(...)
+				// and && binds tighter than ||, so the duplicate check only applied to
+				// the "Test" branch. A file with several test* methods was added once
+				// per method.
+				String methodName = node.getName().getIdentifier();
+				boolean looksLikeTest = methodName.startsWith("test") || methodName.startsWith("Test");
+				if (looksLikeTest && !testPaths.contains(unit.getResource())) {
 					testPaths.add(unit.getResource());
-					return true;
 				}
 				return false;
 			}
 		});
-		return testPaths;
 	}
 }
